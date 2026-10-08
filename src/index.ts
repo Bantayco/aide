@@ -2,3 +2,4 @@
 // The .aide format and the operations over it.
 export * from "./types";
 export * from "./tree";
+export * from "./parse";
