@@ -1,44 +1,5 @@
-# Python
-__pycache__/
-*.py[cod]
-*.so
-*.egg-info/
-dist/
-build/
-venv/
-.venv/
-
-# Environment
-.env
-*.pem
-*.key
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Ruff
-.ruff_cache/
-
-# Skills eval workspaces (throwaway)
-skills/*-workspace/
-.obsidian/
-
-# Evals (local run artifacts)
-eval_baseline/
-eval_output/
-
-# Frontend
 node_modules/
-frontend/dist/
+dist/
+.DS_Store
+*.log
+.env

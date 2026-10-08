@@ -1,30 +1,24 @@
-# aide
+# @bantay/aide
 
-**For what you're living.**
+The aide primitive: the `.aide` format and the operations over it.
 
-aide is a conversational web page editor. Describe what you're running — a league, a budget, a renovation — and aide forms a living page. As things change, tell aide. The page stays current. The URL stays the same.
+An aide is a declarative spec — entities and the relationships between them —
+that an LLM authors and a build engine (bantay) compiles into an app or artifact.
+This package is the shared source of truth for that format, consumed by the
+bantay engine and the gloss editor.
 
-## Stack
+## Entry points
 
-- **Backend:** Python 3.12 / FastAPI / asyncpg
-- **Database:** Neon Postgres (RLS)
-- **Storage:** Cloudflare R2
-- **Compute:** Railway
-- **Auth:** Magic links via Resend
-- **Payments:** Stripe
+- `@bantay/aide` — pure, isomorphic core (browser + node): the `AideTree` types
+  and the tree operations `addEntity`, `removeEntity`, `addRelationship`,
+  `validate`.
+- `@bantay/aide/node` — the core **plus** filesystem IO: `read`, `write`, and
+  `.aide` discovery (`resolveAidePath`, `discoverAideFiles`). Node only.
 
-## Development
-
-```bash
-pip install -r requirements.txt -r requirements-dev.txt
-ruff check backend/
-pytest backend/tests/
+```ts
+import { addEntity, validate } from "@bantay/aide";          // anywhere
+import { read, write, resolveAidePath } from "@bantay/aide/node"; // node
 ```
 
-## Deploy
-
-Push to `main`. Railway handles the rest.
-
-## Docs
-
-Architecture decisions, security requirements, and implementation guides are in `docs/`. Claude Code reads these automatically via `CLAUDE.md`.
+The old artifact-host service that previously lived in this repo is preserved on
+the `archive/host` branch.

@@ -1,0 +1,27 @@
+{
+  "name": "@bantay/aide",
+  "version": "0.1.0",
+  "description": "The aide primitive: the .aide format and tree operations for spec-driven development.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./node": "./src/node/index.ts"
+  },
+  "files": ["src"],
+  "scripts": {
+    "test": "bun test"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
