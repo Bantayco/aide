@@ -1,0 +1,38 @@
+spec: "1.0"
+entities:
+  my_app:
+    display: page
+    props:
+      title: My App
+      description: One sentence.
+  cujs:
+    parent: my_app
+    display: table
+    props: { title: Critical User Journeys }
+  cuj_sign_in:
+    parent: cujs
+    props: { feature: User signs in, tier: primary, area: auth }
+  sc_sign_in_ok:
+    parent: cuj_sign_in
+    props:
+      name: Happy path
+      given: User has an account
+      when: User submits valid credentials
+      then:
+        - Session created
+        - User lands on home
+  invariants:
+    parent: my_app
+    display: checklist
+    props: { title: Invariants }
+  inv_no_plaintext_passwords:
+    parent: invariants
+    props:
+      statement: Passwords are never stored or logged in plaintext
+      category: security
+      threat_signal: A password string appears in a log line
+relationships:
+  - from: sc_sign_in_ok
+    to: inv_no_plaintext_passwords
+    type: protected_by
+    cardinality: many_to_many

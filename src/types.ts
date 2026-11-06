@@ -1,5 +1,10 @@
 /**
- * Valid relationship types in an aide file
+ * Spec version implemented by this package. See SPEC.md.
+ */
+export const AIDE_SPEC_VERSION = "1.0";
+
+/**
+ * Valid relationship types in an aide file (SPEC §6). Closed vocabulary.
  */
 export const VALID_RELATIONSHIP_TYPES = [
   "protected_by",
@@ -12,6 +17,29 @@ export const VALID_RELATIONSHIP_TYPES = [
 export type RelationshipType = (typeof VALID_RELATIONSHIP_TYPES)[number];
 
 /**
+ * Deprecated relationship-type names and their canonical replacement
+ * (SPEC §6.1, §8.4). Parsers accept these and normalize; writers never emit them.
+ */
+export const DEPRECATED_RELATIONSHIP_TYPES: Record<string, RelationshipType> = {
+  enforced_by: "protected_by",
+};
+
+/**
+ * Domain (from-prefix) and range (to-prefix) of each relationship type (SPEC §6).
+ * `null` range means "any entity or external reference".
+ */
+export const RELATIONSHIP_SIGNATURES: Record<
+  RelationshipType,
+  { from: string; to: string | null }
+> = {
+  protected_by: { from: "sc_", to: "inv_" },
+  depends_on: { from: "cuj_", to: "cuj_" },
+  implements: { from: "con_", to: "inv_" },
+  delegates_to: { from: "sc_", to: null },
+  weakens: { from: "sc_", to: "inv_" },
+};
+
+/**
  * Valid cardinality values
  */
 export const VALID_CARDINALITIES = [
@@ -22,6 +50,20 @@ export const VALID_CARDINALITIES = [
 ] as const;
 
 export type Cardinality = (typeof VALID_CARDINALITIES)[number];
+
+/**
+ * Valid CUJ tiers (SPEC §5.1). Closed vocabulary.
+ */
+export const VALID_TIERS = ["primary", "secondary", "tertiary"] as const;
+export type Tier = (typeof VALID_TIERS)[number];
+
+/**
+ * Identifier grammar (SPEC §3).
+ */
+export const ID_PATTERN = /^[a-z][a-z0-9_]*$/;
+export const ID_MAX_LENGTH = 64;
+/** External reference to an entity in another aide, e.g. `stripe.radar`. */
+export const EXTERNAL_REF_PATTERN = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/;
 
 /**
  * A relationship between two entities in the aide tree
@@ -48,6 +90,10 @@ export interface Entity {
 export interface AideTree {
   entities: Record<string, Entity>;
   relationships: Relationship[];
+  /** Spec version declared by the document (SPEC §2.2). Absent means 1.0. */
+  spec?: string;
+  /** Unknown top-level keys, preserved for round-trip (SPEC §8.2). */
+  extra?: Record<string, unknown>;
 }
 
 /**
@@ -92,3 +138,33 @@ export const ID_PREFIX_CONVENTIONS: Record<string, string> = {
  * Prefix for entities under a CUJ (scenarios)
  */
 export const SCENARIO_PREFIX = "sc_";
+
+/**
+ * Reserved section ids (SPEC §4.3) and the kind prefix each conventionally holds.
+ */
+export const SECTION_PREFIXES: Record<string, string> = ID_PREFIX_CONVENTIONS;
+
+/**
+ * Core entity kinds by id prefix (SPEC §3.1).
+ */
+export const CORE_KIND_PREFIXES = [
+  "cuj_",
+  "sc_",
+  "inv_",
+  "con_",
+  "found_",
+  "wis_",
+  "screen_",
+  "comp_",
+  "st_",
+  "tr_",
+] as const;
+export type CoreKindPrefix = (typeof CORE_KIND_PREFIXES)[number];
+
+/**
+ * Result of a full lint pass: W-rule violations are errors, S-rules are warnings.
+ */
+export interface LintResult {
+  errors: string[];
+  warnings: string[];
+}
