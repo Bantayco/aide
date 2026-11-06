@@ -182,13 +182,16 @@ relationships:
       expect(errs.some((e) => e.startsWith("W10"))).toBe(true);
     });
 
-    test("W8 required props and tier vocabulary", () => {
+    test("W8 wrong-typed/out-of-vocabulary props are errors; S7 missing props are warnings", () => {
       const t = base();
       t.entities.cuj_a.props = { feature: "a", tier: "huge" };
-      t.entities.inv_a.props = { statement: "s" };
-      const errs = validate(t);
-      expect(errs.some((e) => e.includes("cuj_a.tier"))).toBe(true);
-      expect(errs.some((e) => e.includes('inv_a is missing required prop "category"'))).toBe(true);
+      t.entities.inv_a.props = { statement: "s", category: "c", done: "yes" };
+      t.entities.con_a.props = { text: "t" };
+      const { errors, warnings } = lint(t);
+      expect(errors.some((e) => e.includes("cuj_a.tier"))).toBe(true);
+      expect(errors.some((e) => e.includes("inv_a.done must be a boolean"))).toBe(true);
+      expect(errors.some((e) => e.includes("con_a"))).toBe(false);
+      expect(warnings.some((w) => w === 'S7: con_a is missing required prop "domain"')).toBe(true);
     });
 
     test("W9 state machine references", () => {

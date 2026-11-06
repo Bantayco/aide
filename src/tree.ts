@@ -257,46 +257,58 @@ export function lint(tree: AideTree): LintResult {
     errors.push(`W10: depends_on cycle: ${cycle.join(" -> ")}`);
   }
 
-  // W8 + W9: kind-specific props
+  // W8 + W9: kind-specific props. Missing REQUIRED props are S7 warnings
+  // (completeness); present-but-wrong props are W8 errors.
   for (const [id, entity] of Object.entries(entities)) {
     const k = kind(id);
     const props = entity.props ?? {};
-    const req = (name: string, type: "string" | "boolean" | "string|array" = "string") => {
+    const check = (name: string, type: "string" | "boolean" | "string|array" = "string", required = true): boolean => {
       const v = props[name];
+      if (v === undefined) {
+        if (required) warnings.push(`S7: ${id} is missing required prop "${name}"`);
+        return false;
+      }
       const ok =
         type === "string" ? typeof v === "string" && v.length > 0
         : type === "boolean" ? typeof v === "boolean"
-        : typeof v === "string" || (Array.isArray(v) && v.length > 0);
-      if (!ok) errors.push(`W8: ${id} is missing required prop "${name}"`);
+        : typeof v === "string" || (Array.isArray(v) && v.length > 0 && v.every((x) => typeof x === "string"));
+      if (!ok) errors.push(`W8: ${id}.${name} must be a ${type === "string|array" ? "string or string[]" : type}`);
       return ok;
     };
     switch (k) {
       case "cuj_":
-        req("feature");
-        if (req("tier") && !(VALID_TIERS as readonly string[]).includes(props.tier as string)) {
+        check("feature");
+        if (check("tier") && !(VALID_TIERS as readonly string[]).includes(props.tier as string)) {
           errors.push(`W8: ${id}.tier must be one of ${VALID_TIERS.join(", ")}`);
         }
         break;
       case "sc_":
-        req("name"); req("given"); req("when"); req("then", "string|array");
+        check("name"); check("given"); check("when"); check("then", "string|array");
         if (!entity.parent || kind(entity.parent) !== "cuj_") {
           errors.push(`W8: ${id} must have a cuj_* parent`);
         }
         break;
       case "inv_":
-        req("statement"); req("category");
+        check("statement"); check("category");
+        check("done", "boolean", false);
         break;
       case "con_":
-        req("text"); req("domain");
+        check("text"); check("domain");
         break;
       case "found_":
       case "wis_":
-        req("text");
+        check("text");
+        break;
+      case "comp_":
+        if (props.variants !== undefined && !(Array.isArray(props.variants) && props.variants.every((x) => typeof x === "string"))) {
+          errors.push(`W8: ${id}.variants must be a string[]`);
+        }
         break;
       case "st_": {
-        if (req("screen") && !has(props.screen as string)) {
+        if (check("screen") && !has(props.screen as string)) {
           errors.push(`W9: ${id}.screen references missing screen "${props.screen}"`);
         }
+        check("initial", "boolean", false);
         for (const [pk, pv] of Object.entries(props)) {
           if (!pk.startsWith("comp_")) continue;
           if (!has(pk)) {
@@ -312,11 +324,11 @@ export function lint(tree: AideTree): LintResult {
       }
       case "tr_":
         for (const end of ["from", "to"] as const) {
-          if (req(end) && (!has(props[end] as string) || kind(props[end] as string) !== "st_")) {
+          if (check(end) && (!has(props[end] as string) || kind(props[end] as string) !== "st_")) {
             errors.push(`W9: ${id}.${end} references missing state "${props[end]}"`);
           }
         }
-        req("action");
+        check("action");
         if (typeof props.trigger === "string" && !has(props.trigger)) {
           errors.push(`W9: ${id}.trigger references missing component "${props.trigger}"`);
         }

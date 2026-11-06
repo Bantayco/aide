@@ -162,6 +162,13 @@ not under `cujs`, an `inv_*` not under `invariants`, etc.
 Each kind defines REQUIRED and OPTIONAL props. Additional props are always
 permitted (§8.2).
 
+REQUIRED means *required for the entity to be complete*. Because an aide is a
+living document that is routinely valid-but-incomplete mid-edit, a validator
+reports a **missing** REQUIRED prop as a completeness warning (S7), not an
+error. A prop that is **present** with the wrong type or a value outside its
+vocabulary is an error (W8). The JSON Schema, which has no notion of warnings,
+validates *complete* documents and treats REQUIRED props as required.
+
 ### 5.1 `cuj_*` — Critical User Journey
 
 What a user accomplishes. An outcome, not an implementation.
@@ -364,8 +371,9 @@ restated as a checklist:
 - W5. Every relationship `type` and `cardinality` is in its vocabulary. (§6)
 - W6. Every relationship respects the domain/range of its type. (§6)
 - W7. No duplicate relationships. (§6)
-- W8. REQUIRED props are present and of the right type for each core kind.
-  (§5)
+- W8. Every present prop of a core kind has the right type and, where the
+  spec gives one, a value in its vocabulary (`tier`, `then`, booleans, ids). A
+  `sc_*` has a `cuj_*` parent. (§5)
 - W9. `tr_*.from` / `tr_*.to` name existing `st_*`; `st_*.screen` names an
   existing `screen_*`; `tr_*.trigger` and `st_*.comp_*` name existing
   `comp_*`. (§5.7)
@@ -380,6 +388,7 @@ restated as a checklist:
 - S5. Every scenario `then` step marked `(black box)` belongs to a scenario
   with a `delegates_to` relationship.
 - S6. A kind is under its conventional section (§4.3).
+- S7. Every REQUIRED prop of each core kind is present (completeness). (§5)
 
 Reachability (S1) and liveness (S2) are the formal well-formedness
 properties of the state machine; they are warnings rather than errors
@@ -503,4 +512,4 @@ relationships:
 | `con_*` (+ `rationale`, `decision_date`, `alternatives_rejected`) | C |
 | `relationships` | R |
 | `wis_*` | W |
-| W1–W10, S1–S6 | Def. 1.6 well-formedness |
+| W1–W10, S1–S7 | Def. 1.6 well-formedness |
