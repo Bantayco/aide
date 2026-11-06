@@ -7,11 +7,18 @@ that an LLM authors and a build engine (bantay) compiles into an app or artifact
 This package is the shared source of truth for that format, consumed by the
 bantay engine and the gloss editor.
 
+## Specification
+
+The format is specified in [SPEC.md](./SPEC.md) (normative, RFC 2119) with a
+structural [JSON Schema](./schema/aide.schema.json). This package targets
+conformance level **L2 (Validator)**: `validate()` reports every W-rule
+violation; `lint()` additionally reports S-rule warnings.
+
 ## Entry points
 
 - `@bantay/aide` — pure, isomorphic core (browser + node): the `AideTree` types
   and the tree operations `addEntity`, `removeEntity`, `addRelationship`,
-  `validate`.
+  `validate`, `lint`, plus `parse`/`serialize`.
 - `@bantay/aide/node` — the core **plus** filesystem IO: `read`, `write`, and
   `.aide` discovery (`resolveAidePath`, `discoverAideFiles`). Node only.
 

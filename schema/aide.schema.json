@@ -1,0 +1,288 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bantay.co/schema/aide/1.0/aide.schema.json",
+  "title": ".aide document",
+  "description": "Structural schema for the .aide file format, spec 1.0. Validates the JSON form of a .aide YAML document. Semantic rules (referential integrity, domain/range, cycles, reachability) are enforced by a conforming validator, not by this schema. See SPEC.md.",
+  "type": "object",
+  "required": ["entities", "relationships"],
+  "properties": {
+    "spec": {
+      "type": "string",
+      "pattern": "^1\\.[0-9]+$",
+      "description": "Spec version this document was written against. Absent means 1.0."
+    },
+    "entities": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "$ref": "#/$defs/id" },
+      "patternProperties": {
+        "^cuj_": { "$ref": "#/$defs/cuj" },
+        "^sc_": { "$ref": "#/$defs/scenario" },
+        "^inv_": { "$ref": "#/$defs/invariant" },
+        "^con_": { "$ref": "#/$defs/constraint" },
+        "^found_": { "$ref": "#/$defs/foundation" },
+        "^wis_": { "$ref": "#/$defs/wisdom" },
+        "^screen_": { "$ref": "#/$defs/screen" },
+        "^comp_": { "$ref": "#/$defs/component" },
+        "^st_": { "$ref": "#/$defs/state" },
+        "^tr_": { "$ref": "#/$defs/transition" }
+      },
+      "additionalProperties": { "$ref": "#/$defs/entity" }
+    },
+    "relationships": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/relationship" }
+    }
+  },
+
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "maxLength": 64
+    },
+    "externalRef": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+    },
+    "isoDate": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "propKey": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+    },
+
+    "entity": {
+      "type": "object",
+      "properties": {
+        "display": { "type": "string" },
+        "parent": { "$ref": "#/$defs/id" },
+        "props": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/propKey" }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "cuj": {
+      "allOf": [
+        { "$ref": "#/$defs/entity" },
+        {
+          "required": ["props"],
+          "properties": {
+            "props": {
+              "required": ["feature", "tier"],
+              "properties": {
+                "feature": { "type": "string", "minLength": 1 },
+                "tier": { "enum": ["primary", "secondary", "tertiary"] },
+                "area": { "type": "string" }
+              }
+            }
+          }
+        }
+      ]
+    },
+
+    "scenario": {
+      "allOf": [
+        { "$ref": "#/$defs/entity" },
+        {
+          "required": ["parent", "props"],
+          "properties": {
+            "parent": { "type": "string", "pattern": "^cuj_" },
+            "props": {
+              "required": ["name", "given", "when", "then"],
+              "properties": {
+                "name": { "type": "string", "minLength": 1 },
+                "given": { "type": "string" },
+                "when": { "type": "string" },
+                "then": {
+                  "oneOf": [
+                    { "type": "string" },
+                    { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+
+    "invariant": {
+      "allOf": [
+        { "$ref": "#/$defs/entity" },
+        {
+          "required": ["props"],
+          "properties": {
+            "props": {
+              "required": ["statement", "category"],
+              "properties": {
+                "statement": { "type": "string", "minLength": 1 },
+                "category": { "type": "string", "minLength": 1 },
+                "threat_signal": { "type": "string" },
+                "done": { "type": "boolean" },
+                "checker": { "type": "string" },
+                "test": { "type": "string" },
+                "enforced": { "type": "string" },
+                "survives_skip_permissions": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      ]
+    },
+
+    "constraint": {
+      "allOf": [
+        { "$ref": "#/$defs/entity" },
+        {
+          "required": ["props"],
+          "properties": {
+            "props": {
+              "required": ["text", "domain"],
+              "properties": {
+                "text": { "type": "string", "minLength": 1 },
+                "domain": { "type": "string", "minLength": 1 },
+                "rationale": { "type": "string" },
+                "decision_date": { "$ref": "#/$defs/isoDate" },
+                "alternatives_rejected": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          }
+        }
+      ]
+    },
+
+    "foundation": {
+      "allOf": [
+        { "$ref": "#/$defs/entity" },
+        {
+          "required": ["props"],
+          "properties": {
+            "props": {
+              "required": ["text"],
+              "properties": { "text": { "type": "string", "minLength": 1 } }
+            }
+          }
+        }
+      ]
+    },
+
+    "wisdom": {
+      "allOf": [
+        { "$ref": "#/$defs/entity" },
+        {
+          "required": ["props"],
+          "properties": {
+            "props": {
+              "required": ["text"],
+              "properties": {
+                "text": { "type": "string", "minLength": 1 },
+                "source": { "type": "string" }
+              }
+            }
+          }
+        }
+      ]
+    },
+
+    "screen": {
+      "allOf": [
+        { "$ref": "#/$defs/entity" },
+        {
+          "properties": {
+            "props": {
+              "properties": {
+                "name": { "type": "string" },
+                "description": { "type": "string" }
+              }
+            }
+          }
+        }
+      ]
+    },
+
+    "component": {
+      "allOf": [
+        { "$ref": "#/$defs/entity" },
+        {
+          "properties": {
+            "props": {
+              "properties": {
+                "name": { "type": "string" },
+                "type": { "type": "string" },
+                "variants": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+              }
+            }
+          }
+        }
+      ]
+    },
+
+    "state": {
+      "allOf": [
+        { "$ref": "#/$defs/entity" },
+        {
+          "required": ["props"],
+          "properties": {
+            "props": {
+              "required": ["screen"],
+              "properties": {
+                "screen": { "type": "string", "pattern": "^screen_" },
+                "initial": { "type": "boolean" },
+                "description": { "type": "string" }
+              },
+              "patternProperties": {
+                "^comp_": { "type": "string" }
+              }
+            }
+          }
+        }
+      ]
+    },
+
+    "transition": {
+      "allOf": [
+        { "$ref": "#/$defs/entity" },
+        {
+          "required": ["props"],
+          "properties": {
+            "props": {
+              "required": ["from", "to", "action"],
+              "properties": {
+                "from": { "type": "string", "pattern": "^st_" },
+                "to": { "type": "string", "pattern": "^st_" },
+                "action": { "type": "string", "minLength": 1 },
+                "trigger": { "type": "string", "pattern": "^comp_" },
+                "guard": { "type": "string" }
+              }
+            }
+          }
+        }
+      ]
+    },
+
+    "relationship": {
+      "type": "object",
+      "required": ["from", "to", "type", "cardinality"],
+      "properties": {
+        "from": { "$ref": "#/$defs/id" },
+        "to": {
+          "anyOf": [{ "$ref": "#/$defs/id" }, { "$ref": "#/$defs/externalRef" }]
+        },
+        "type": {
+          "enum": ["protected_by", "depends_on", "implements", "delegates_to", "weakens", "enforced_by"],
+          "description": "enforced_by is a deprecated alias for protected_by; parsers normalize it."
+        },
+        "cardinality": {
+          "enum": ["one_to_one", "one_to_many", "many_to_one", "many_to_many"]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
