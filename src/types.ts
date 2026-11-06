@@ -30,14 +30,23 @@ export const DEPRECATED_RELATIONSHIP_TYPES: Record<string, RelationshipType> = {
  */
 export const RELATIONSHIP_SIGNATURES: Record<
   RelationshipType,
-  { from: string; to: string | null }
+  { from: readonly string[]; to: string | null }
 > = {
-  protected_by: { from: "sc_", to: "inv_" },
-  depends_on: { from: "cuj_", to: "cuj_" },
-  implements: { from: "con_", to: "inv_" },
-  delegates_to: { from: "sc_", to: null },
-  weakens: { from: "sc_", to: "inv_" },
+  protected_by: { from: ["sc_"], to: "inv_" },
+  depends_on: { from: ["cuj_"], to: "cuj_" },
+  implements: { from: ["con_"], to: "inv_" },
+  delegates_to: { from: ["sc_", "cuj_"], to: null },
+  weakens: { from: ["sc_"], to: "inv_" },
 };
+
+/** Reserved section ids are per-document (SPEC §8.5); all other ids are project-unique. */
+export const RESERVED_SECTION_IDS = [
+  "cujs",
+  "invariants",
+  "constraints",
+  "foundations",
+  "wisdom",
+] as const;
 
 /**
  * Valid cardinality values

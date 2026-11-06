@@ -14,6 +14,14 @@ structural [JSON Schema](./schema/aide.schema.json). This package targets
 conformance level **L2 (Validator)**: `validate()` reports every W-rule
 violation; `lint()` additionally reports S-rule warnings.
 
+## Projects (child aides)
+
+An aide for anything large decomposes: `bantay.aide` delegates `cuj_visualize`
+to `bantay.visualize.aide` in the same directory (SPEC §8). `resolveAidePath`
+picks the root; `readProject` follows every `delegates_to`; `readMerged` gives
+one tree with every entity in the project; `lintProject` adds the project-level
+rules (W11 unique ids, S8 unresolved children).
+
 ## Entry points
 
 - `@bantay/aide` — pure, isomorphic core (browser + node): the `AideTree` types

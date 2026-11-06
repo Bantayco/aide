@@ -1,8 +1,12 @@
 import { readdir } from "fs/promises";
 import { join } from "path";
+import { isRootAideFilename } from "../project";
 
 export interface DiscoveryResult {
+  /** Every .aide file in the directory. */
   found: string[];
+  /** The root aides among them (SPEC COMP-6). */
+  roots: string[];
   error?: string;
 }
 
@@ -17,19 +21,21 @@ export interface ResolvedAidePath {
 export async function discoverAideFiles(cwd: string): Promise<DiscoveryResult> {
   try {
     const files = await readdir(cwd);
-    const aideFiles = files.filter((f) => f.endsWith(".aide"));
-    return { found: aideFiles };
+    const aideFiles = files.filter((f) => f.endsWith(".aide")).sort();
+    return { found: aideFiles, roots: aideFiles.filter(isRootAideFilename) };
   } catch (error) {
-    return { found: [], error: error instanceof Error ? error.message : String(error) };
+    return { found: [], roots: [], error: error instanceof Error ? error.message : String(error) };
   }
 }
 
 /**
  * Resolve the aide file path for a project directory
  * - If explicitPath is provided, use it
- * - Otherwise, glob for *.aide in projectPath
- * - If exactly one found, use it
- * - If multiple found, throw error
+ * - Otherwise, discover *.aide in projectPath and select the root aide
+ *   (SPEC COMP-6): the file whose name has no "." besides the extension.
+ *   Child aides (bantay.visualize.aide) never shadow the root.
+ * - If no root but exactly one .aide file, use it
+ * - If several roots, throw (COMP-7)
  * - If none found, throw error
  *
  * @param projectPath - The project directory to search in
@@ -51,7 +57,7 @@ export async function resolveAidePath(
   }
 
   // Auto-discover
-  const { found, error } = await discoverAideFiles(projectPath);
+  const { found, roots, error } = await discoverAideFiles(projectPath);
 
   if (error) {
     throw new Error(`Error discovering aide files: ${error}`);
@@ -61,15 +67,17 @@ export async function resolveAidePath(
     throw new Error("No .aide file found. Run 'bantay aide init' to create one.");
   }
 
-  if (found.length > 1) {
+  const candidates = roots.length > 0 ? roots : found;
+
+  if (candidates.length > 1) {
     throw new Error(
-      `Multiple .aide files found. Specify one with --aide <path>\nFound: ${found.join(", ")}`
+      `Multiple root .aide files found. Specify one with --aide <path>\nFound: ${candidates.join(", ")}`
     );
   }
 
   return {
-    path: join(projectPath, found[0]),
-    filename: found[0],
+    path: join(projectPath, candidates[0]),
+    filename: candidates[0],
   };
 }
 

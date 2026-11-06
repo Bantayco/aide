@@ -160,11 +160,18 @@ export function validate(tree: AideTree): string[] {
 /**
  * Full lint pass: W-rules as errors, S-rules as warnings (SPEC §7).
  */
-export function lint(tree: AideTree): LintResult {
+export interface LintOptions {
+  /** Ids defined in ancestor aides (SPEC §8.6, COMP-12): relationship endpoints may reference them. */
+  inheritedIds?: Iterable<string>;
+}
+
+export function lint(tree: AideTree, options: LintOptions = {}): LintResult {
   const errors: string[] = [];
   const warnings: string[] = [];
   const entities = tree.entities;
+  const inherited = new Set(options.inheritedIds ?? []);
   const has = (id: string) => Object.prototype.hasOwnProperty.call(entities, id);
+  const hasOrInherited = (id: string) => has(id) || inherited.has(id);
   const kind = (id: string) => kindOf(id);
 
   // W3: id grammar
@@ -222,7 +229,7 @@ export function lint(tree: AideTree): LintResult {
       errors.push(`W4: Orphaned relationship: "from" entity "${rel.from}" not found`);
     }
     const externalOk = type === "delegates_to" && EXTERNAL_REF_PATTERN.test(rel.to);
-    if (!has(rel.to) && !externalOk) {
+    if (!hasOrInherited(rel.to) && !externalOk) {
       errors.push(`W4: Orphaned relationship: "to" entity "${rel.to}" not found`);
     }
 
@@ -230,8 +237,8 @@ export function lint(tree: AideTree): LintResult {
       const sig = RELATIONSHIP_SIGNATURES[type as keyof typeof RELATIONSHIP_SIGNATURES];
       const fromKind = kind(rel.from);
       const toKind = kind(rel.to);
-      if (fromKind && fromKind !== sig.from) {
-        errors.push(`W6: ${type} "from" must be a ${sig.from}* entity, got "${rel.from}"`);
+      if (fromKind && !sig.from.includes(fromKind)) {
+        errors.push(`W6: ${type} "from" must be a ${sig.from.join("* or ")}* entity, got "${rel.from}"`);
       }
       if (sig.to && toKind && toKind !== sig.to) {
         errors.push(`W6: ${type} "to" must be a ${sig.to}* entity, got "${rel.to}"`);
@@ -347,12 +354,17 @@ export function lint(tree: AideTree): LintResult {
     }
   }
 
-  // S4: every cuj has a scenario
+  // S4: every cuj has a scenario, or delegates the whole journey to a child aide
   const scenarioParents = new Set(
     Object.entries(entities).filter(([id]) => kind(id) === "sc_").map(([, e]) => e.parent)
   );
+  const delegatingCujs = new Set(
+    tree.relationships
+      .filter((r) => normalizeRelationshipType(String(r.type)) === "delegates_to" && kind(r.from) === "cuj_")
+      .map((r) => r.from)
+  );
   for (const id of Object.keys(entities)) {
-    if (kind(id) === "cuj_" && !scenarioParents.has(id)) {
+    if (kind(id) === "cuj_" && !scenarioParents.has(id) && !delegatingCujs.has(id)) {
       warnings.push(`S4: ${id} has no scenarios`);
     }
   }

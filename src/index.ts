@@ -3,3 +3,4 @@
 export * from "./types";
 export * from "./tree";
 export * from "./parse";
+export * from "./project";
