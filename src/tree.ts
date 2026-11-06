@@ -163,6 +163,12 @@ export function validate(tree: AideTree): string[] {
 export interface LintOptions {
   /** Ids defined in ancestor aides (SPEC §8.6, COMP-12): relationship endpoints may reference them. */
   inheritedIds?: Iterable<string>;
+  /**
+   * True when this is a child aide linted without its ancestors available
+   * (SPEC §8.6): an unknown `to` endpoint is then reported as S8, not W4,
+   * since it may be an inherited id.
+   */
+  ancestorsUnavailable?: boolean;
 }
 
 export function lint(tree: AideTree, options: LintOptions = {}): LintResult {
@@ -230,7 +236,11 @@ export function lint(tree: AideTree, options: LintOptions = {}): LintResult {
     }
     const externalOk = type === "delegates_to" && EXTERNAL_REF_PATTERN.test(rel.to);
     if (!hasOrInherited(rel.to) && !externalOk) {
-      errors.push(`W4: Orphaned relationship: "to" entity "${rel.to}" not found`);
+      if (options.ancestorsUnavailable) {
+        warnings.push(`S8: "to" entity "${rel.to}" not found in this aide; may be inherited (ancestors not loaded)`);
+      } else {
+        errors.push(`W4: Orphaned relationship: "to" entity "${rel.to}" not found`);
+      }
     }
 
     if (typeKnown) {

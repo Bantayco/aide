@@ -2,6 +2,7 @@ import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { mkdtemp, rm, writeFile } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
+import { lintFile } from "../src/node";
 import {
   parse,
   lint,
@@ -141,5 +142,30 @@ describe("node: discovery and readProject", () => {
     expect(Object.keys(p.aides).sort()).toEqual(["bantay", "bantay.visualize"]);
     const m = await readMerged(join(dir, "bantay.aide"));
     expect(m.entities.cuj_visualize_generate).toBeDefined();
+  });
+});
+
+describe("lintFile (node)", () => {
+
+  const ROOT = "entities:\n  shop: {display: page}\n  invariants: {parent: shop}\n  inv_a: {parent: invariants, props: {statement: s, category: c}}\nrelationships: []\n";
+  const CHILD = "entities:\n  checkout: {display: page}\n  cujs: {parent: checkout}\n  cuj_x: {parent: cujs, props: {feature: f, tier: primary}}\n  sc_x: {parent: cuj_x, props: {name: n, given: g, when: w, then: [t]}}\nrelationships:\n  - {from: sc_x, to: inv_a, type: protected_by, cardinality: many_to_many}\n";
+
+  test("child alone sees inherited ids from its ancestor file", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "aide-lintfile-"));
+    await writeFile(join(dir, "shop.aide"), ROOT);
+    await writeFile(join(dir, "shop.checkout.aide"), CHILD);
+    const r = await lintFile(join(dir, "shop.checkout.aide"));
+    expect(r.errors).toEqual([]);
+    expect(Object.keys(r.aides)).toEqual(["shop.checkout"]);
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  test("child alone without its ancestor: inherited refs are S8, not W4", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "aide-lintfile-"));
+    await writeFile(join(dir, "shop.checkout.aide"), CHILD);
+    const r = await lintFile(join(dir, "shop.checkout.aide"));
+    expect(r.errors).toEqual([]);
+    expect(r.warnings.some((w) => w.startsWith("S8") && w.includes("inv_a"))).toBe(true);
+    await rm(dir, { recursive: true, force: true });
   });
 });
